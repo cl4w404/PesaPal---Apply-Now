@@ -1,5 +1,8 @@
 package com.devcorp.bank_proj.controller;
 
+import com.devcorp.bank_proj.dto.CreditDebitRequest;
+import com.devcorp.bank_proj.dto.EmailEnquiry;
+import com.devcorp.bank_proj.dto.EnquiryResponse;
 import com.devcorp.bank_proj.dto.UserDto;
 import com.devcorp.bank_proj.models.User;
 import com.devcorp.bank_proj.response.Response;
@@ -22,5 +25,21 @@ public class UserController {
     @GetMapping
     public List<User> getAllUsers(){
         return userService.getAllUsers();
+    }
+    @PostMapping("/balanceEnquiry")
+    public Response balanceEnquiry(@RequestBody EnquiryResponse response){
+        return userService.balanceEnquiry(response) ;
+    }
+    @PostMapping("/emailEnquiry")
+    public Response emailEnquiry(@RequestBody EmailEnquiry enquiry){
+        return userService.emailEnquiry(enquiry) ;
+    }
+    @PostMapping("/debit")
+    public Response debitAccount(@RequestBody CreditDebitRequest request){
+        return userService.debitAccount(request) ;
+    }
+    @PostMapping("/credit")
+    public Response creditAccount(@RequestBody CreditDebitRequest request){
+        return userService.creditAccount(request) ;
     }
 }

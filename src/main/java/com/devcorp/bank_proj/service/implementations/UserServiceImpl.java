@@ -1,7 +1,6 @@
 package com.devcorp.bank_proj.service.implementations;
 
-import com.devcorp.bank_proj.dto.EmailDetails;
-import com.devcorp.bank_proj.dto.UserDto;
+import com.devcorp.bank_proj.dto.*;
 import com.devcorp.bank_proj.models.User;
 import com.devcorp.bank_proj.repository.UserRepository;
 import com.devcorp.bank_proj.response.AccountInfo;
@@ -74,4 +73,109 @@ public class UserServiceImpl implements UserService {
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
+
+    @Override
+    public Response balanceEnquiry(EnquiryResponse response) {
+        //boolean isAccountExist = userRepository.existsByAccountNumber(response.getAccountNumber());
+        User foundUser= userRepository.findByAccountNumber(response.getAccountNumber());
+        if(foundUser == null) {
+            return Response.builder()
+                    .messageCode(AccountUtils.ACCOUNT_DOES_NOT_EXIST)
+                    .message(AccountUtils.ACCOUNT_DOES_NOT_EXIST_MESSAGE)
+                    .data(null)
+                    .build();
+        }
+
+        return Response.builder()
+                .messageCode(AccountUtils.ACCOUNT_FOUND_CODE)
+                .message(AccountUtils.ACCOUNT_FOUND_MESSAGE)
+                .data(AccountInfo.builder()
+                        .accountBalance(foundUser.getBalance())
+                        .accountName(foundUser.getFirstName())
+                        .accountNumber(foundUser.getAccountNumber())
+                        .build())
+                .build();
+    }
+
+    @Override
+    public Response emailEnquiry(EmailEnquiry enquiry) {
+        User foundUser = userRepository.findByEmail(enquiry.getEmail());
+        if(foundUser == null) {
+            return Response.builder()
+                    .messageCode(AccountUtils.EMAIL_DOES_NOT_EXIST_CODE)
+                    .message(AccountUtils.EMAIL_DOES_NOT_EXIST_MESSAGE)
+                    .data(null)
+                    .build();
+        }
+        return Response.builder()
+                .messageCode(AccountUtils.EMAIL_EXIST_CODE)
+                .message(AccountUtils.EMAIL_EXIST_MESSAGE)
+                .data(AccountInfo.builder()
+                        .accountBalance(foundUser.getBalance())
+                        .accountName(foundUser.getFirstName())
+                        .accountNumber(foundUser.getAccountNumber())
+                        .build())
+                .build();
+    }
+
+    @Override
+    public Response debitAccount(CreditDebitRequest request) {
+        User foundUser = userRepository.findByAccountNumber(request.getAccountNumber());
+        if(foundUser == null) {
+            return Response.builder()
+                    .messageCode(AccountUtils.ACCOUNT_DOES_NOT_EXIST)
+                    .message(AccountUtils.ACCOUNT_DOES_NOT_EXIST_MESSAGE)
+                    .data(null)
+                    .build();
+        }
+        foundUser.setBalance(foundUser.getBalance().add(request.getAmount()));
+        userRepository.save(foundUser);
+        EmailDetails emailDetails = EmailDetails.builder()
+                .recipient(foundUser.getEmail())
+                .subject("Successfully debited")
+                .message("Your Account " + foundUser.getAccountNumber() + "has been debited Successfully with" + request.getAmount() + "Ksh")
+                .build();
+        emailService.sendEmail(emailDetails);
+        return Response.builder()
+                .messageCode(AccountUtils.ACCOUNT_DEBITED_SUCCESS_CODE)
+                .message(AccountUtils.ACCOUNT_DEBITED_SUCCESS_MESSAGE)
+                .data(AccountInfo.builder()
+                        .accountBalance(foundUser.getBalance())
+                        .accountName(foundUser.getFirstName() + " " + foundUser.getLastName())
+                        .accountNumber(foundUser.getAccountNumber())
+                        .build())
+                .build();
+    }
+
+    @Override
+    public Response creditAccount(CreditDebitRequest request) {
+        User foundUser = userRepository.findByAccountNumber(request.getAccountNumber());
+        if(foundUser == null) {
+            return Response.builder()
+                    .messageCode(AccountUtils.ACCOUNT_DOES_NOT_EXIST)
+                    .message(AccountUtils.ACCOUNT_DOES_NOT_EXIST_MESSAGE)
+                    .data(null)
+                    .build();
+        }
+        if(foundUser.getBalance().compareTo(request.getAmount()) < 0) {
+            return Response.builder()
+                    .messageCode(AccountUtils.INSUFFICIENT_FUNDS_CODE)
+                    .message(AccountUtils.INSUFFICIENT_FUNDS_MESSAGE)
+                    .data(null)
+                    .build();
+        }
+        foundUser.setBalance(foundUser.getBalance().subtract(request.getAmount()));
+        userRepository.save(foundUser);
+        return Response.builder()
+                .messageCode(AccountUtils.CREDITED_SUCCESFULLY_CODE)
+                .message(AccountUtils.CREDITED_SUCCESFULLY_MESSAGE)
+                .data(AccountInfo.builder()
+                        .accountNumber(foundUser.getAccountNumber())
+                        .accountBalance(foundUser.getBalance())
+                        .accountName(foundUser.getFirstName() + " " + foundUser.getLastName())
+                        .build())
+                .build();
+    }
+
+
 }
