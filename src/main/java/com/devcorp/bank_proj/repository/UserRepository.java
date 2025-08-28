@@ -3,6 +3,8 @@ package com.devcorp.bank_proj.repository;
 import com.devcorp.bank_proj.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
@@ -10,5 +12,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     User findByAccountNumber(String accountNumber);
 
-    User findByEmail(String email);
+    Optional<User> findByEmail(String email);
 }

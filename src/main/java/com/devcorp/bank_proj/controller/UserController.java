@@ -1,9 +1,6 @@
 package com.devcorp.bank_proj.controller;
 
-import com.devcorp.bank_proj.dto.CreditDebitRequest;
-import com.devcorp.bank_proj.dto.EmailEnquiry;
-import com.devcorp.bank_proj.dto.EnquiryResponse;
-import com.devcorp.bank_proj.dto.UserDto;
+import com.devcorp.bank_proj.dto.*;
 import com.devcorp.bank_proj.models.User;
 import com.devcorp.bank_proj.response.Response;
 import com.devcorp.bank_proj.service.services.UserService;
@@ -18,11 +15,11 @@ public class UserController {
     @Autowired
     UserService userService;
 
-    @PostMapping
+    @PostMapping("/add")
      public Response addUser(@RequestBody UserDto user){
         return userService.createUser(user);
     }
-    @GetMapping
+    @GetMapping("/all")
     public List<User> getAllUsers(){
         return userService.getAllUsers();
     }
@@ -41,5 +38,9 @@ public class UserController {
     @PostMapping("/credit")
     public Response creditAccount(@RequestBody CreditDebitRequest request){
         return userService.creditAccount(request) ;
+    }
+    @PostMapping("/login")
+    public Response login(@RequestBody UserLogin user){
+        return userService.userLogin(user);
     }
 }

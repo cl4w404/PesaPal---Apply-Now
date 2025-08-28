@@ -1,9 +1,6 @@
 package com.devcorp.bank_proj.service.services;
 
-import com.devcorp.bank_proj.dto.CreditDebitRequest;
-import com.devcorp.bank_proj.dto.EmailEnquiry;
-import com.devcorp.bank_proj.dto.EnquiryResponse;
-import com.devcorp.bank_proj.dto.UserDto;
+import com.devcorp.bank_proj.dto.*;
 import com.devcorp.bank_proj.models.User;
 import com.devcorp.bank_proj.response.Response;
 
@@ -16,5 +13,6 @@ public interface UserService {
    Response emailEnquiry(EmailEnquiry enquiry);
    Response debitAccount(CreditDebitRequest request);
    Response creditAccount(CreditDebitRequest request);
+   Response userLogin(UserLogin userLogin);
 
 }

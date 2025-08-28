@@ -1,6 +1,8 @@
 package com.devcorp.bank_proj.service.implementations;
 
+import com.devcorp.bank_proj.config.JwtTokenProvider;
 import com.devcorp.bank_proj.dto.*;
+import com.devcorp.bank_proj.models.Role;
 import com.devcorp.bank_proj.models.User;
 import com.devcorp.bank_proj.repository.UserRepository;
 import com.devcorp.bank_proj.response.AccountInfo;
@@ -10,13 +12,25 @@ import com.devcorp.bank_proj.service.services.UserService;
 import com.devcorp.bank_proj.utils.AccountUtils;
 import com.devcorp.bank_proj.utils.Status;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
+    @Autowired
+    PasswordEncoder passwordEncoder;
+    @Autowired
+    AuthenticationManager authenticationManager;
+    @Autowired
+    JwtTokenProvider tokenProvider;
+
 
     UserRepository userRepository;
     EmailService emailService;
@@ -45,10 +59,12 @@ public class UserServiceImpl implements UserService {
                 .dateOfBirth(user.getDateOfBirth())
                 .accountNumber(AccountUtils.getAccountNumber())
                 .phoneNumber(user.getPhoneNumber())
+                .password(passwordEncoder.encode(user.getPassword()))
                 .alternativePhone(user.getAlternativePhone())
                 .email(user.getEmail())
                 .balance(BigDecimal.ZERO)
                 .status(Status.ACTIVE.toString())
+                .role(Role.ROLE_ADMIN)
                 .build();
         User saveUser = userRepository.save(newUser);
         EmailDetails emailDetails = EmailDetails.builder()
@@ -99,7 +115,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Response emailEnquiry(EmailEnquiry enquiry) {
-        User foundUser = userRepository.findByEmail(enquiry.getEmail());
+       Optional<User> foundUser = userRepository.findByEmail(enquiry.getEmail());
         if(foundUser == null) {
             return Response.builder()
                     .messageCode(AccountUtils.EMAIL_DOES_NOT_EXIST_CODE)
@@ -111,9 +127,9 @@ public class UserServiceImpl implements UserService {
                 .messageCode(AccountUtils.EMAIL_EXIST_CODE)
                 .message(AccountUtils.EMAIL_EXIST_MESSAGE)
                 .data(AccountInfo.builder()
-                        .accountBalance(foundUser.getBalance())
-                        .accountName(foundUser.getFirstName())
-                        .accountNumber(foundUser.getAccountNumber())
+                        .accountBalance(foundUser.get().getBalance())
+                        .accountName(foundUser.get().getFirstName())
+                        .accountNumber(foundUser.get().getAccountNumber())
                         .build())
                 .build();
     }
@@ -177,5 +193,24 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Override
+    public Response userLogin(UserLogin userLogin) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(userLogin.getEmail(), userLogin.getPassword())
+        );
+
+        EmailDetails loginAlert = EmailDetails.builder()
+                .subject("Successful Login Alert")
+                .recipient(userLogin.getEmail())
+                .message("You have successfully logged into your account. If you did not initiate this, please contact customer care immediately.")
+                .build();
+        emailService.sendEmail(loginAlert);
+
+        // **IMPROVEMENT:** Return the token in the 'data' field for consistency.
+        return Response.builder()
+                .messageCode("LOGIN_SUCCESS")
+                .message(tokenProvider.generateToken(authentication))
+                .build();
+    }
 
 }
