@@ -56,7 +56,7 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.POST,"/api/v1/user/add").permitAll()
                                 // **FIX:** Permit all POST requests to the user login endpoint
                                 .requestMatchers(HttpMethod.POST, "/api/v1/user/login").permitAll()
-                                // All other requests must be authenticated
+                                // All other endpoints must be authenticated 
                                 .anyRequest().authenticated()
                 );
         httpSecurity.authenticationProvider(authenticationProvider());
